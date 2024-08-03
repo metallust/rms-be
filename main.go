@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	// "github.com/metallust/rms-be/internals/bootstrap/web"
+	"github.com/metallust/rms-be/internals/bootstrap/web"
 	"github.com/metallust/rms-be/internals/controllers"
 
 	"github.com/gofiber/fiber/v2"
@@ -52,6 +53,8 @@ func (a *App) setupHTTP() {
     a.httpServer = fiber.New()
 
 	// setup middlewares
+    middleware := web.NewMiddlewares(a.httpServer, a.db)
+    middleware.Init()
 	// setup static files
 	// setup routes
 

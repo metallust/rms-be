@@ -27,12 +27,15 @@ func CreateToken(email string, role string) (string, error) {
 	}
 
 	// Print information about the created token
-	log.Info("Token claims added: %+v\n", claims)
+	log.Info("Token claims added: ", claims)
+    data, err := VerifyToken(tokenString)
+    log.Info("token verfication", data, err)
+
 	return tokenString, nil
 }
 
 // Function to verify JWT tokens
-func VerifyToken(tokenString string) (interface{}, error){
+func VerifyToken(tokenString string) (map[string]string, error){
 	// Parse the token with the secret key
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return SECRETKEY, nil
