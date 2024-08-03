@@ -6,11 +6,11 @@ import (
 )
 
 type Jobs struct {
-    client *mongo.Client
+    db *mongo.Database
 }
 
-func NewJobsController(client *mongo.Client) *Jobs {
-    return &Jobs{client: client}
+func NewJobsController(db *mongo.Database) *Jobs {
+    return &Jobs{db: db}
 }
 
 func (j *Jobs) GetJobs(c *fiber.Ctx) error {

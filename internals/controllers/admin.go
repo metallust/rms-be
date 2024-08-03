@@ -6,12 +6,12 @@ import (
 )
 
 type admin struct {
-	client *mongo.Client
+	db *mongo.Database
 }
 
-func NewAdminController(client *mongo.Client) *admin {
+func NewAdminController(db *mongo.Database) *admin {
 	return &admin{
-		client: client,
+        db: db,
 	}
 }
 func (ad *admin) GetApplicant(c *fiber.Ctx) error {

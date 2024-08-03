@@ -20,7 +20,7 @@ import (
 type App struct {
 	// Common
 	httpServer *fiber.App
-	client     *mongo.Client
+	db     *mongo.Database
 }
 
 func NewApp() *App {
@@ -55,15 +55,13 @@ func (a *App) setupHTTP() {
 	// setup static files
 	// setup routes
 
-	authcontroller := controllers.NewAuthController(a.client)
-	jobscontroller := controllers.NewJobsController(a.client)
-	admincontroller := controllers.NewAdminController(a.client)
-	usercontroller := controllers.NewUserController(a.client)
+	authcontroller := controllers.NewAuthController(a.db)
+	jobscontroller := controllers.NewJobsController(a.db)
+	admincontroller := controllers.NewAdminController(a.db)
+	usercontroller := controllers.NewUserController(a.db)
 
 	//Create a profile on the system (Name, Email, Password, UserType (Admin/Applicant), Profile Headline, Address).
-	a.httpServer.Post("/signup", func(c *fiber.Ctx) error {
-		return c.SendString("Signup")
-	})
+	a.httpServer.Post("/signup", authcontroller.Signup)
 	//Authenticate users and return a JWT token upon successful validation.
 	a.httpServer.Post("/login", authcontroller.Login)
 
@@ -102,7 +100,7 @@ func (a *App) setupDatabases() {
 		log.Fatal("Failed to connect to MongoDB: ", err)
 	}
 
-	a.client = client
+	a.db = client.Database(os.Getenv("DB"))
 }
 
 func (a *App) setupEnv() {
@@ -131,7 +129,7 @@ func (a *App) closeServices() {
 		log.Println("cleaned up [httpserver]")
 	}
 
-	if err := a.client.Disconnect(context.TODO()); err != nil {
+	if err := a.db.Client().Disconnect(context.TODO()); err != nil {
 		log.Fatal("failed to shutdown [mongodb]", err)
 	} else {
 		log.Println("cleaned up [mongodb]")

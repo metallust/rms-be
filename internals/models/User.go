@@ -2,8 +2,11 @@ package models
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/gofiber/fiber/v2/log"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -23,7 +26,34 @@ type User struct {
 
 const COLLECTION_USER = "users"
 
-func (u *User) Insert(db *mongo.Database) (*mongo.InsertOneResult, error) {
+func (u *User) Save(db *mongo.Database) (*mongo.InsertOneResult, error) {
+
+    //check email exists
     collection := db.Collection(COLLECTION_USER)
+    filter := bson.M{"email": u.Email}
+
+    count, err := collection.CountDocuments(context.Background(), filter)
+    if err != nil {
+        log.Error("Error checking email", err.Error())
+        return nil, err
+    }
+    if count > 0 {
+        log.Error("Email already exists")
+        return nil, errors.New("Email already exists")
+    }
     return collection.InsertOne(context.Background(), u)
+}
+
+
+func (u *User) Find(db *mongo.Database, email string) (err error) {
+    collection := db.Collection(COLLECTION_USER)
+    
+    filter := bson.M{"email": email}
+    result := collection.FindOne(context.Background(), filter)
+    err = result.Decode(u)
+    if err != nil {
+        log.Error("can't decode", err.Error())
+        return
+    }
+    return
 }

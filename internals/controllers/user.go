@@ -6,11 +6,11 @@ import (
 )
 
 type User struct {
-    client *mongo.Client
+    db *mongo.Database
 }
 
-func NewUserController(client *mongo.Client) *User {
-    return &User{client: client}
+func NewUserController(db *mongo.Database) *User {
+    return &User{db: db}
 }
 
 func (u *User) UploadResume(c *fiber.Ctx) error {
