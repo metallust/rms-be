@@ -7,7 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-    "github.com/metallust/rms-be/internals/bootstrap/web"
+	// "github.com/metallust/rms-be/internals/bootstrap/web"
+	"github.com/metallust/rms-be/internals/controllers"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -19,7 +20,7 @@ import (
 type App struct {
 	// Common
 	httpServer *fiber.App
-	client    *mongo.Client
+	client     *mongo.Client
 }
 
 func NewApp() *App {
@@ -34,9 +35,9 @@ func (a *App) Run() {
 	a.setupHTTP()
 	go a.shutdown()
 
-	port := ":" + os.Getenv("WEB_PORT")
+	port := ":" + os.Getenv("PORT")
 	if port == ":" {
-		port = ":3000"
+		log.Fatal("Set your 'PORT' environment variable. ")
 	}
 
 	if err := a.httpServer.Listen(port); err != nil {
@@ -48,12 +49,45 @@ func (a *App) Run() {
 }
 
 func (a *App) setupHTTP() {
-	app := web.NewWebserver()
+    a.httpServer = fiber.New()
 
 	// setup middlewares
 	// setup static files
 	// setup routes
-	a.httpServer = app
+
+	authcontroller := controllers.NewAuthController(a.client)
+	jobscontroller := controllers.NewJobsController(a.client)
+	admincontroller := controllers.NewAdminController(a.client)
+	usercontroller := controllers.NewUserController(a.client)
+
+	//Create a profile on the system (Name, Email, Password, UserType (Admin/Applicant), Profile Headline, Address).
+	a.httpServer.Post("/signup", func(c *fiber.Ctx) error {
+		return c.SendString("Signup")
+	})
+	//Authenticate users and return a JWT token upon successful validation.
+	a.httpServer.Post("/login", authcontroller.Login)
+
+	//Authenticated API for uploading resume files (only PDF or DOCX) of the applicant. Only Applicant type users can access this API.
+	a.httpServer.Post("/uploadResume", usercontroller.UploadResume)
+	a.httpServer.Route("/admin", func(admin fiber.Router) {
+		//Authenticated API for creating job openings. Only Admin type users can access this API.
+		admin.Get("/job", jobscontroller.CreateJob)
+		//Authenticated API for fetching information regarding a job opening.
+		//Returns details about the job opening and a list of applicants. Only Admin type users can access this API.
+		admin.Post("/job/:job_id", jobscontroller.GetJob)
+		//Authenticated API for fetching a list of all users in the system. Only Admin type users can access this API
+		admin.Post("/applicant", admincontroller.Applicants)
+		//Authenticated API for fetching extracted data of an applicant. Only Admin type users can access this API.
+        admin.Post("/applicant/:applicant_id", admincontroller.GetApplicant)
+	})
+
+	a.httpServer.Route("/jobs", func(router fiber.Router) {
+		//Authenticated API for fetching job openings. All users can access this API.
+		router.Post("/", jobscontroller.GetJobs)
+		//Authenticated API for applying to a particular job. Only Applicant users are allowed to apply for jobs.
+		router.Post("/apply", jobscontroller.ApplyJob)
+	})
+
 }
 
 func (a *App) setupDatabases() {
@@ -68,11 +102,11 @@ func (a *App) setupDatabases() {
 		log.Fatal("Failed to connect to MongoDB: ", err)
 	}
 
-    a.client = client
+	a.client = client
 }
 
 func (a *App) setupEnv() {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal("No .env file found", err)
 	}
 }
@@ -98,13 +132,12 @@ func (a *App) closeServices() {
 	}
 
 	if err := a.client.Disconnect(context.TODO()); err != nil {
-        log.Fatal("failed to shutdown [mongodb]", err)
+		log.Fatal("failed to shutdown [mongodb]", err)
 	} else {
-        log.Println("cleaned up [mongodb]")
+		log.Println("cleaned up [mongodb]")
 	}
 }
 
 func main() {
-    NewApp().Run()
+	NewApp().Run()
 }
-
