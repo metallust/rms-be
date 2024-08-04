@@ -1,9 +1,20 @@
 package helper
 
-import "github.com/metallust/rms-be/internals/models"
+import (
+	"encoding/json"
+	"strings"
 
-func Compare(profile models.Profile, job models.Job) int {
-    // Compare the profile and job
-    // Return a score of how well the profile matches the job
-    return 0
+	"github.com/metallust/rms-be/internals/models"
+	"github.com/rhnvrm/textsimilarity"
+)
+
+func Compare(profile models.Profile, job models.Job) float64 {
+	profileString, _ := json.Marshal(profile)
+	resume := string(profileString)
+    desc := strings.Split(job.Description, ".")
+    desc = append(desc, job.Title)
+    corpus := append(desc, resume)
+    ts := textsimilarity.New(corpus)
+	result, _ := ts.Similarity(strings.Join(desc, " "), resume)
+	return result
 }

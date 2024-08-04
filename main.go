@@ -87,6 +87,9 @@ func (a *App) setupHTTP() {
 		router.Get("/", jobscontroller.GetJobs)
 		//Authenticated API for applying to a particular job. Only Applicant users are allowed to apply for jobs.
 		router.Get("/apply", jobscontroller.ApplyJob)
+
+        //get score
+        router.Get("/score/:id", jobscontroller.GetScore)
 	})
 
 }

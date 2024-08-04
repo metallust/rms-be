@@ -76,10 +76,10 @@ func (a *Auth) Login(c *fiber.Ctx) error {
 
 	//check if user exists
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Internal server error", err.Error()))
+		return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Invalid Crediatials", nil))
 	}
 	if user.Email == `` {
-		return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("Invalid Crediatials", err.Error()))
+		return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("Invalid Crediatials", nil))
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(in.Password))

@@ -171,3 +171,47 @@ func (j *Jobs) GetJob(c *fiber.Ctx) error {
 	log.Info("job fetched successfully", job)
 	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully fetched job", job))
 }
+
+
+func (j *Jobs) GetScore(c *fiber.Ctx) error {
+	data := c.Locals("tokendata").(map[string]string)
+
+	job_id := c.Params("id")
+    jobID, err := primitive.ObjectIDFromHex(job_id)
+    if err != nil {
+        log.Error("Error converting id", err.Error())
+        return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("Bad request", err.Error()))
+    }
+
+	collections := j.db.Collection(models.COLLECTION_JOB)
+	results := collections.FindOne(context.Background(), bson.M{"_id": jobID})
+
+	var job models.Job
+	err = results.Decode(&job)
+	if err != nil {
+		log.Error("Error decoding all users", err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Internal error", nil))
+	}
+
+	
+    //fetch profile
+    profile_id := data["id"]
+    profileID, err := primitive.ObjectIDFromHex(profile_id)
+    if err != nil {
+        log.Error("Error converting id", err.Error())
+        return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("Bad request", err.Error()))
+    }
+    collections = j.db.Collection(models.COLLECTION_PROFILE)
+    results = collections.FindOne(context.Background(), bson.M{"_id": profileID})
+    profile := models.Profile{}
+    err = results.Decode(&profile)
+    if err != nil {
+        log.Error("Error decoding all users", err.Error())
+        return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Internal error", nil))
+    }
+
+    score := helper.Compare(profile, job)
+
+	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully Calculated score", score))
+}
+
