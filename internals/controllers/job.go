@@ -207,11 +207,10 @@ func (j *Jobs) GetScore(c *fiber.Ctx) error {
     err = results.Decode(&profile)
     if err != nil {
         log.Error("Error decoding all users", err.Error())
-        return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Internal error", nil))
+        return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("Upload resume", nil))
     }
 
     score := helper.Compare(profile, job)
-
 	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully Calculated score", score))
 }
 
