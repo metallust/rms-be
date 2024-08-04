@@ -26,34 +26,39 @@ type User struct {
 
 const COLLECTION_USER = "users"
 
-func (u *User) Save(db *mongo.Database) (*mongo.InsertOneResult, error) {
+func (u *User) Save(db *mongo.Database) error {
 
-    //check email exists
-    collection := db.Collection(COLLECTION_USER)
-    filter := bson.M{"email": u.Email}
+	//check email exists
+	collection := db.Collection(COLLECTION_USER)
+	filter := bson.M{"email": u.Email}
 
-    count, err := collection.CountDocuments(context.Background(), filter)
-    if err != nil {
-        log.Error("Error checking email", err.Error())
-        return nil, err
-    }
-    if count > 0 {
-        log.Error("Email already exists")
-        return nil, errors.New("Email already exists")
-    }
-    return collection.InsertOne(context.Background(), u)
+	count, err := collection.CountDocuments(context.Background(), filter)
+	if err != nil {
+		log.Error("Error checking email", err.Error())
+		return err
+	}
+	if count > 0 {
+		log.Error("Email already exists")
+		return errors.New("Email already exists")
+	}
+	result, err := collection.InsertOne(context.Background(), u)
+	if err != nil {
+		log.Error("Error saving user", err.Error())
+		return err
+	}
+	u.ID = result.InsertedID.(primitive.ObjectID)
+	return nil
 }
 
-
 func (u *User) Find(db *mongo.Database, email string) (err error) {
-    collection := db.Collection(COLLECTION_USER)
-    
-    filter := bson.M{"email": email}
-    result := collection.FindOne(context.Background(), filter)
-    err = result.Decode(u)
-    if err != nil {
-        log.Error("can't decode", err.Error())
-        return
-    }
-    return
+	collection := db.Collection(COLLECTION_USER)
+
+	filter := bson.M{"email": email}
+	result := collection.FindOne(context.Background(), filter)
+	err = result.Decode(u)
+	if err != nil {
+		log.Error("can't decode", err.Error())
+		return
+	}
+	return
 }

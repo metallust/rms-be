@@ -45,18 +45,18 @@ func (a *Auth) Signup(c *fiber.Ctx) error {
 	user.PasswordHash = string(hashedPassword)
 	user.UserType = in.UserType
 
-	if _, err := user.Save(a.db); err != nil {
+	if err := user.Save(a.db); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("User already exist", nil))
 	}
 	log.Info("User created", user)
 
-    //generate token
-    token, err := helper.CreateToken(user.Email, user.UserType)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Some Thing went wrong", err.Error()))
-    }
+	//generate token
+	token, err := helper.CreateToken(user.ID.Hex(), user.UserType)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Some Thing went wrong", err.Error()))
+	}
 
-    return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully added User", map[string]interface{}{"user":user, "token": token}))
+	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully added User", map[string]interface{}{"user": user, "token": token}))
 }
 
 type LoginIn struct {
@@ -78,7 +78,7 @@ func (a *Auth) Login(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Internal server error", err.Error()))
 	}
-	if user.Email == "" {
+	if user.Email == `` {
 		return c.Status(fiber.StatusBadRequest).JSON(helper.NewHTTPResponse("Invalid Crediatials", err.Error()))
 	}
 
@@ -89,10 +89,10 @@ func (a *Auth) Login(c *fiber.Ctx) error {
 	}
 
 	//generate token
-    token, err := helper.CreateToken(user.Email, user.UserType)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Some Thing went wrong", err.Error()))
-    }
+	token, err := helper.CreateToken(user.ID.Hex(), user.UserType)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Some Thing went wrong", err.Error()))
+	}
 
 	//return user
 	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully logged in", map[string]interface{}{"user": user, "token": token}))

@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/metallust/rms-be/internals/helper"
 	"github.com/metallust/rms-be/internals/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -86,15 +87,15 @@ func (u *User) UploadResume(c *fiber.Ctx) error {
     profile.ResumeFileAddress = destination
 
     //get the applicant id
-    user := models.User{}
-    if err := user.Find(u.db, c.Locals("tokendata").(map[string]string)["email"]); err != nil {
-        log.Error("Error finding user", err.Error())
+	//save the profile
+    obj, err := primitive.ObjectIDFromHex(c.Locals("tokendata").(map[string]string)["id"])
+    if err != nil {
+        log.Error("Error converting id", err.Error())
         return c.Status(fiber.StatusInternalServerError).JSON(helper.NewHTTPResponse("Internal error", nil))
     }
-    profile.Applicant = user.ID
+    profile.Applicant = obj
     profile.Insert(u.db)
-    
-	//save the profile
+
     log.Info("Profile created successfully")
 	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully created your profile", profile))
 }
