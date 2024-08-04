@@ -77,9 +77,9 @@ func (a *App) setupHTTP() {
 		//Returns details about the job opening and a list of applicants. Only Admin type users can access this API.
 		admin.Post("/job/:job_id", jobscontroller.GetJob)
 		//Authenticated API for fetching a list of all users in the system. Only Admin type users can access this API
-		admin.Post("/applicant", admincontroller.Applicants)
+		admin.Get("/applicants", admincontroller.GetApplicants)
 		//Authenticated API for fetching extracted data of an applicant. Only Admin type users can access this API.
-        admin.Post("/applicant/:applicant_id", admincontroller.GetApplicant)
+        admin.Get("/applicant/:id", admincontroller.GetApplicant)
 	})
 
 	a.httpServer.Route("/jobs", func(router fiber.Router) {

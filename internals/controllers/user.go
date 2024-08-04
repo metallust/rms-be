@@ -95,5 +95,6 @@ func (u *User) UploadResume(c *fiber.Ctx) error {
     profile.Insert(u.db)
     
 	//save the profile
+    log.Info("Profile created successfully")
 	return c.Status(fiber.StatusOK).JSON(helper.NewHTTPResponse("Successfully created your profile", profile))
 }
